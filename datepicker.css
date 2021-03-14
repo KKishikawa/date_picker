@@ -1,0 +1,24 @@
+body{
+  position: relative;
+}
+#date_picker{
+  position: absolute;
+}
+#date_picker table {
+  border-collapse: collapse;
+  width: 500px;
+}
+
+#date_picker td,
+#date_picker th {
+  border: 1px solid;
+  height: 30px;
+}
+
+#date_picker .sunday{
+  color: red;
+}
+
+#date_picker .saturday{
+  color: blue;
+}
