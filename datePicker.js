@@ -39,6 +39,12 @@ var datePicker = function (el) {
     this.createFrame();
     this.root.style.display = "none";
 };
+
+/** 定数 */
+datePicker.prototype.dateDataName = "d";
+datePicker.prototype.lastMonthClassName = "last-month";
+datePicker.prototype.nextMonthClassName = "next-month";
+datePicker.prototype.monthDataName = "m";
 /**
  * ピッカーを開く/閉じる
  * @param {HTMLInputElement} input 入力フィールド
@@ -49,12 +55,12 @@ datePicker.prototype.toggle = function (input) {
         return;
     }
     this.input = input;
-    this.curDate = new Date();
-    this.shownDate = new Date(this.curDate);
+    this.now = new Date();
+    this.shownDate = new Date();
     this.showDateElement();
 
     this.root.style.left = window.pageXOffset + input.clientLeft + "px";
-    this.root.style.top = window.pageYOffset + input.clientTop + input.clientHeight + "px";
+    this.root.style.top = window.pageYOffset + input.clientTop + input.clientHeight + 10 + "px";
     this.root.style.display = "";
 }
 
@@ -62,18 +68,24 @@ datePicker.prototype.toggle = function (input) {
  * 本体作成
  */
 datePicker.prototype.createFrame = function () {
+    var that = this;
     var head = document.createElement("div");
+    head.className = "dp-head-wrapper"
     this.prev = document.createElement("div");
     this.prev.textContent = "＜";
+    this.prev.onclick = function () { that.handleClickSwitch(-1); };
     this.next = document.createElement("div");
     this.next.textContent = "＞";
+    this.next.onclick = function () { that.handleClickSwitch(1); };
     this.headBody = document.createElement("div");
+    this.headBody.onclick = function () { that.handleClickHeadBody(); };
     head.appendChild(this.prev);
     head.appendChild(this.headBody);
     head.appendChild(this.next);
 
     this.body = document.createElement("div");
     this.body.classList.add("dp-body-wrapper");
+    this.body.onclick = function (e) { that.handleClickBody(e) };
 
     this.root.appendChild(head);
     this.root.appendChild(this.body);
@@ -90,25 +102,23 @@ datePicker.prototype.createWeekElement = function () {
     this.body.appendChild(weekTable);
 };
 datePicker.prototype.createDateElement = function () {
-    this.DateTable = document.createElement("table");
-    this.DateTable.innerHTML = ""; // 初期化
+    var dateTable = document.createElement("table");
     var d = new Date(this.shownDate);
     d.setDate(1);
     var wd = d.getDay();
     var dim = calendar.DayInMonth(this.shownDate);
     // first week
-    var tr = this.DateTable.insertRow(-1);
+    var tr = dateTable.insertRow(-1);
     if (wd > 0) {
         var ld = new Date(d);
-        ld.setDate(0);
         for (var i = 0; i < wd; i++) {
             var c = tr.insertCell(0);
-            ld.setDate(ld.getDate() - i);
-            var date = d.getDate();
-            c.innerText = date;
-            c.attributes["d"] = date;
+            ld.setDate(ld.getDate() - 1);
+            var date = ld.getDate();
+            c.textContent = date;
+            c.dataset[this.dateDataName] = date;
             c.classList.add(calendar.weekClasses[ld.getDay()]);
-            c.classList.add("last-month");
+            c.classList.add(this.lastMonthClassName);
         }
     }
     var fwcnt = 7 - wd;
@@ -117,51 +127,114 @@ datePicker.prototype.createDateElement = function () {
         d.setDate(d.getDate() + 1);
         var c = tr.insertCell(-1);
         var date = d.getDate();
-        c.innerText = date;
-        c.attributes["d"] = date;
+        c.textContent = date;
+        c.dataset[this.dateDataName] = date;
         c.className = calendar.weekClasses[d.getDay()];
     }
     var loop = Math.ceil((dim - fwcnt) / 7) - 1;
     for (var i = 0; i < loop; i++) {
-        tr = this.DateTable.insertRow(-1);
+        tr = dateTable.insertRow(-1);
         for (var j = 0; j < 7; j++) {
             d.setDate(d.getDate() + 1);
             var c = tr.insertCell(-1);
             var date = d.getDate();
-            c.innerText = date;
-            c.attributes["d"] = date;
+            c.textContent = date;
+            c.dataset[this.dateDataName] = date;
             c.className = calendar.weekClasses[d.getDay()];
         }
     }
     var lwcnt = dim - d.getDate();
-    tr = this.DateTable.insertRow(-1);
+    tr = dateTable.insertRow(-1);
     for (var i = 0; i < lwcnt; i++) {
         d.setDate(d.getDate() + 1);
         var c = tr.insertCell(-1);
         var date = d.getDate();
-        c.innerText = date;
-        c.attributes["d"] = date;
+        c.textContent = date;
+        c.dataset[this.dateDataName] = date;
         c.className = calendar.weekClasses[d.getDay()];
     }
     var nmcnt = 7 - lwcnt;
-    for(var i = 0; i < nmcnt; i++){
+    for (var i = 0; i < nmcnt; i++) {
         d.setDate(d.getDate() + 1);
         var c = tr.insertCell(-1);
         var date = d.getDate();
-        c.innerText = date;
-        c.attributes["d"] = date;
+        c.textContent = date;
+        c.dataset[this.dateDataName] = date;
         c.classList.add(calendar.weekClasses[d.getDay()]);
-        c.classList.add("next-month");
+        c.classList.add(this.nextMonthClassName);
     }
-    this.body.appendChild(this.DateTable);
+    this.body.appendChild(dateTable);
 };
+datePicker.prototype.showYear = function () {
+    this.headBody.textContent = this.shownDate.getFullYear() + "年";
+}
 datePicker.prototype.showMonthElement = function () {
-
+    this.type = "month";
+    this.showYear();
+    this.body.innerHTML = "";
+    var table = document.createElement("table");
+    for (var i = 0; i < 3; i++) {
+        var k = i * 4;
+        var tr = table.insertRow(-1);
+        for (var j = 1; j <= 4; j++) {
+            var td = tr.insertCell(-1);
+            var m = k + j;
+            td.textContent = m + "月";
+            td.dataset[this.monthDataName] = m;
+        }
+    }
+    this.body.appendChild(table);
 };
-
 datePicker.prototype.showDateElement = function () {
-    this.headBody.textContent = this.curDate.getFullYear() + "年" + (this.curDate.getMonth() + 1) + "月";
-    this.body.innerText = "";
+    this.headBody.textContent = this.shownDate.getFullYear() + "年" + (this.shownDate.getMonth() + 1) + "月";
+    this.body.innerHTML = "";
+    this.type = "date";
     this.createWeekElement();
     this.createDateElement();
+};
+
+datePicker.prototype.handleClickSwitch = function (num) {
+    switch (this.type) {
+        case "date":
+            this.shownDate.setMonth(this.shownDate.getMonth() + num);
+            this.showDateElement();
+            break;
+        case "month":
+            this.shownDate.setFullYear(this.shownDate.getFullYear() + num);
+            this.showYear();
+            break;
+        default:
+            break;
+    }
+};
+datePicker.prototype.handleClickHeadBody = function () {
+    this.showMonthElement();
+};
+
+/**
+ * 
+ * @param {MouseEvent} e マウスイベント
+ */
+datePicker.prototype.handleClickBody = function (e) {
+    var t = e.target;
+    switch (this.type) {
+        case "date":
+            var d = t.dataset[this.dateDataName];
+            if (!d) break;
+            this.shownDate.setDate(d);
+            if (t.classList.contains(this.lastMonthClassName)) {
+                this.shownDate.setMonth(this.shownDate.getMonth() - 1);
+            } else if (t.classList.contains(this.nextMonthClassName)) {
+                this.shownDate.setMonth(this.shownDate.getMonth() + 1);
+            }
+            this.input.value = this.shownDate.getFullYear() + "-" + (this.shownDate.getMonth() + 1) + "-" + this.shownDate.getDate();
+            break;
+        case "month":
+            var m = t.dataset[this.monthDataName];
+            if (!m) break;
+        default:
+            this.shownDate.setMonth(m - 1);
+            this.showDateElement();
+            break;
+    }
 };

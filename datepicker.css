@@ -1,24 +1,41 @@
-body{
+body {
   position: relative;
 }
-#date_picker{
+#date_picker {
   position: absolute;
+}
+#date_picker .dp-head-wrapper{
+  display: flex;
+  justify-content: space-around;
+  background-color: #f7debf;
+}
+#date_picker .dp-head-wrapper div{
+  flex: auto;
+  text-align: center;
 }
 #date_picker table {
   border-collapse: collapse;
-  width: 500px;
+  width: 180px;
+  table-layout: fixed;
 }
 
 #date_picker td,
 #date_picker th {
-  border: 1px solid;
-  height: 30px;
+  border: 1px solid black;
+  height: 20px;
+  text-align: center;
+  font-size: 14px;
 }
 
-#date_picker .sunday{
+#date_picker .sunday {
   color: red;
 }
 
-#date_picker .saturday{
+#date_picker .saturday {
   color: blue;
+}
+
+#date_picker .last-month,
+#date_picker .next-month {
+  opacity: 0.35;
 }
